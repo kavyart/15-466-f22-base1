@@ -12,8 +12,8 @@
 
 // basic snake game knowledge followed from https://github.com/pknowledge/C-Snake-Game/blob/master/main.cpphttps://github.com/pknowledge/C-Snake-Game/blob/master/main.cpp
 void PlayMode::gen_food() {
-    food.x = ((rand() % ((PPU466::ScreenWidth / 8) - 3)) + 1) * 8;
-    food.y = ((rand() % ((PPU466::ScreenHeight / 8) - 3)) + 1) * 8;
+    food.x = ((rand() % ((ppu.ScreenWidth / 8) - 3)) + 1) * 8;
+    food.y = ((rand() % ((ppu.ScreenHeight / 8) - 3)) + 1) * 8;
 }
 
 bool PlayMode::food_eaten() {
@@ -25,110 +25,64 @@ void PlayMode::snake_grow() {
 }
 
 LoadedData pipeline;
-Load<LoadedData::TileData> snake_data(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/snake_head.png");});
+Load<LoadedData::TileData> snake_left(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/snake_head_left.png");});
+Load<LoadedData::TileData> snake_right(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/snake_head_right.png");});
+Load<LoadedData::TileData> snake_up(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/snake_head_up.png");});
+Load<LoadedData::TileData> snake_down(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/snake_head_down.png");});
+Load<LoadedData::TileData> snake_body(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/snake_body.png");});
+Load<LoadedData::TileData> food_pixels(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/food.png");});
+Load<LoadedData::TileData> light_background(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/light_background.png");});
+
 
 PlayMode::PlayMode() {
-
+	// init assets in starting positions
 	gen_food();
 	snake.body.push_back(std::make_pair(snake.x, snake.y));
 
+	
+	// TILES
+	//--background
+	const LoadedData::TileData light_background_tile = *light_background;
+	ppu.tile_table[0].bit0 = light_background_tile.tile.bit0;
+	ppu.tile_table[0].bit1 = light_background_tile.tile.bit1;
 
-	//TODO:
-	// you *must* use an asset pipeline of some sort to generate tiles.
-	// don't hardcode them like this!
-	// or, at least, if you do hardcode them like this,
-	//  make yourself a script that spits out the code that you paste in here
-	//   and check that script into your repository.
+	//---snake head
+	// left
+	const LoadedData::TileData snake_left_tile = *snake_left;
+	ppu.tile_table[5].bit0 = snake_left_tile.tile.bit0;
+	ppu.tile_table[5].bit1 = snake_left_tile.tile.bit1;
+	// right
+	const LoadedData::TileData snake_right_tile = *snake_right;
+	ppu.tile_table[6].bit0 = snake_right_tile.tile.bit0;
+	ppu.tile_table[6].bit1 = snake_right_tile.tile.bit1;
+	// up
+	const LoadedData::TileData snake_up_tile = *snake_up;
+	ppu.tile_table[7].bit0 = snake_up_tile.tile.bit0;
+	ppu.tile_table[7].bit1 = snake_up_tile.tile.bit1;
+	// down
+	const LoadedData::TileData snake_down_tile = *snake_down;
+	ppu.tile_table[8].bit0 = snake_down_tile.tile.bit0;
+	ppu.tile_table[8].bit1 = snake_down_tile.tile.bit1;
+	
+	//---snake body
+	const LoadedData::TileData snake_body_tile = *snake_body;
+	ppu.tile_table[9].bit0 = snake_body_tile.tile.bit0;
+	ppu.tile_table[9].bit1 = snake_body_tile.tile.bit1;
 
-	//Also, *don't* use these tiles in your game:
+	//---food
+	const LoadedData::TileData food_tile = *food_pixels;
+	ppu.tile_table[10].bit0 = food_tile.tile.bit0;
+	ppu.tile_table[10].bit1 = food_tile.tile.bit1;
 
-	// { //use tiles 0-16 as some weird dot pattern thing:
-	// 	std::array< uint8_t, 8*8 > distance;
-	// 	for (uint32_t y = 0; y < 8; ++y) {
-	// 		for (uint32_t x = 0; x < 8; ++x) {
-	// 			float d = glm::length(glm::vec2((x + 0.5f) - 4.0f, (y + 0.5f) - 4.0f));
-	// 			d /= glm::length(glm::vec2(4.0f, 4.0f));
-	// 			distance[x+8*y] = uint8_t(std::max(0,std::min(255,int32_t( 255.0f * d ))));
-	// 		}
-	// 	}
-	// 	for (uint32_t index = 0; index < 16; ++index) {
-	// 		PPU466::Tile tile;
-	// 		uint8_t t = uint8_t((255 * index) / 16);
-	// 		for (uint32_t y = 0; y < 8; ++y) {
-	// 			uint8_t bit0 = 0;
-	// 			uint8_t bit1 = 0;
-	// 			for (uint32_t x = 0; x < 8; ++x) {
-	// 				uint8_t d = distance[x+8*y];
-	// 				if (d > t) {
-	// 					bit0 |= (1 << x);
-	// 				} else {
-	// 					bit1 |= (1 << x);
-	// 				}
-	// 			}
-	// 			tile.bit0[y] = bit0;
-	// 			tile.bit1[y] = bit1;
-	// 		}
-	// 		ppu.tile_table[index] = tile;
-	// 	}
-	// }
 
-	//use sprite 32 as a "player":
-	// ppu.tile_table[32].bit0 = {
-	// 	0b01111110,
-	// 	0b11111111,
-	// 	0b11111111,
-	// 	0b11111111,
-	// 	0b11111111,
-	// 	0b11111111,
-	// 	0b11111111,
-	// 	0b01111110,
-	// };
-	// ppu.tile_table[32].bit1 = {
-	// 	0b00000000,
-	// 	0b00000000,
-	// 	0b00011000,
-	// 	0b00100100,
-	// 	0b00000000,
-	// 	0b00100100,
-	// 	0b00000000,
-	// 	0b00000000,
-	// };
-	const LoadedData::TileData sprite = *snake_data;
-	ppu.tile_table[32].bit0 = sprite.tile.bit0;
-	ppu.tile_table[32].bit1 = sprite.tile.bit1;
+	// PALETTES
+	//---background
+	ppu.palette_table[0] = light_background_tile.palette;
+	//---snake
+	ppu.palette_table[1] = snake_body_tile.palette;
+	//---food
+	ppu.palette_table[2] = food_tile.palette;
 
-	// //makes the outside of tiles 0-16 solid:
-	// ppu.palette_table[0] = {
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0x00),
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0xff),
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0x00),
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0xff),
-	// };
-
-	// //makes the center of tiles 0-16 solid:
-	// ppu.palette_table[1] = {
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0x00),
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0x00),
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0xff),
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0xff),
-	// };
-
-	//used for the player:
-	// ppu.palette_table[7] = {
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0x00),
-	// 	glm::u8vec4(0xff, 0xff, 0x00, 0xff),
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0xff),
-	// 	glm::u8vec4(0x00, 0x00, 0x00, 0xff),
-	// };
-	ppu.palette_table[7] = sprite.palette;
-
-	//used for the misc other sprites:
-	ppu.palette_table[6] = {
-		glm::u8vec4(0x00, 0x00, 0x00, 0x00),
-		glm::u8vec4(0x88, 0x88, 0xff, 0xff),
-		glm::u8vec4(0x00, 0x00, 0x00, 0xff),
-		glm::u8vec4(0x00, 0x00, 0x00, 0x00),
-	};
 
 }
 
@@ -143,39 +97,23 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		up.pressed = false;
 		down.pressed = false;
 		if (evt.key.keysym.sym == SDLK_LEFT) {
-			// left.downs += 1;
+			snake.dir = 0;
 			left.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_RIGHT) {
-			// right.downs += 1;
+			snake.dir = 1;
 			right.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_UP) {
-			// up.downs += 1;
+			snake.dir = 2;
 			up.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_DOWN) {
-			// down.downs += 1;
+			snake.dir = 3;
 			down.pressed = true;
 			return true;
 		}
 	}
-	// } else if (evt.type == SDL_KEYUP) {
-	// 	if (evt.key.keysym.sym == SDLK_LEFT) {
-	// 		left.pressed = false;
-	// 		return true;
-	// 	} else if (evt.key.keysym.sym == SDLK_RIGHT) {
-	// 		right.pressed = false;
-	// 		return true;
-	// 	} else if (evt.key.keysym.sym == SDLK_UP) {
-	// 		up.pressed = false;
-	// 		return true;
-	// 	} else if (evt.key.keysym.sym == SDLK_DOWN) {
-	// 		down.pressed = false;
-	// 		return true;
-	// 	}
-	// }
-
 	return false;
 }
 
@@ -191,7 +129,6 @@ void PlayMode::tick() {
 		snake.body.pop_front();
 	}
 
-
 	if (food_eaten()) {
 		snake_grow();
 		gen_food();
@@ -201,9 +138,6 @@ void PlayMode::tick() {
 void PlayMode::update(float elapsed) {
 
 	//slowly rotates through [0,1):
-	// (will be used to set background color)
-	// background_fade += elapsed / 10.0f;
-	// background_fade -= std::floor(background_fade);
 
 	tick_acc += elapsed;
 	while (tick_acc > Tick) {
@@ -216,67 +150,33 @@ void PlayMode::update(float elapsed) {
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	//--- set ppu state based on game state ---
 
-	//background color will be some hsv-like fade:
-	// ppu.background_color = glm::u8vec4(
-	// 	std::min(255,std::max(0,int32_t(255 * 0.5f * (0.5f + std::sin( 2.0f * M_PI * (background_fade + 0.0f / 3.0f) ) ) ))),
-	// 	std::min(255,std::max(0,int32_t(255 * 0.5f * (0.5f + std::sin( 2.0f * M_PI * (background_fade + 1.0f / 3.0f) ) ) ))),
-	// 	std::min(255,std::max(0,int32_t(255 * 0.5f * (0.5f + std::sin( 2.0f * M_PI * (background_fade + 2.0f / 3.0f) ) ) ))),
-	// 	0xff
-	// );
+	// background
+	for (uint32_t i = 0; i < ppu.BackgroundWidth * ppu.BackgroundHeight; i++) {
+		ppu.background[i] = 0;
+	}
+	
+	// food sprite:
+	ppu.sprites[0].x = food.x;
+	ppu.sprites[0].y = food.y;
+	ppu.sprites[0].index = 10;
+	ppu.sprites[0].attributes = 2;
 
-	//tilemap gets recomputed every frame as some weird plasma thing:
-	//NOTE: don't do this in your game! actually make a map or something :-)
-	// for (uint32_t y = 0; y < PPU466::BackgroundHeight; ++y) {
-	// 	for (uint32_t x = 0; x < PPU466::BackgroundWidth; ++x) {
-	// 		//TODO: make weird plasma thing
-	// 		ppu.background[x+PPU466::BackgroundWidth*y] = ((x+y)%16);
-	// 	}
-	// }
-
-	//background scroll:
-	// ppu.background_position.x = int32_t(-0.5f * player_at.x);
-	// ppu.background_position.y = int32_t(-0.5f * player_at.y);
-
-	//food sprite:
-	ppu.sprites[1].x = food.x;
-	ppu.sprites[1].y = food.y;
-	ppu.sprites[1].index = 32;
-	ppu.sprites[1].attributes = 6;
-
-	//player sprite:
-	// ppu.sprites[0].x = ((snake.x + 7) >> 3) << 3;
-	// ppu.sprites[0].y = ((snake.y + 7) >> 3) << 3;
-	ppu.sprites[0].x = snake.body.back().first;
-	ppu.sprites[0].y = snake.body.back().second;
-	ppu.sprites[0].index = 32;
-	ppu.sprites[0].attributes = 7;
-
-	int i = 2;
-
+	int idx = 2;
 	for (std::deque< std::pair<uint8_t,uint8_t> >::iterator it = snake.body.begin(); it != snake.body.end() - 1; it++) {
-		//snake body sprites:
-		ppu.sprites[i].x = it->first;
-		ppu.sprites[i].y = it->second;
-		ppu.sprites[i].index = 32;
-		ppu.sprites[i].attributes = 6;
-		i++;
+		// snake body sprites:
+		ppu.sprites[idx].x = it->first;
+		ppu.sprites[idx].y = it->second;
+		ppu.sprites[idx].index = 9;
+		ppu.sprites[idx].attributes = 1;
+		idx++;
 	}
 
-	// //player sprite:
-	// ppu.sprites[0].x = int8_t(player_at.x);
-	// ppu.sprites[0].y = int8_t(player_at.y);
-	// ppu.sprites[0].index = 32;
-	// ppu.sprites[0].attributes = 7;
+	// snake head sprite:
+	ppu.sprites[1].x = snake.body.back().first;
+	ppu.sprites[1].y = snake.body.back().second;
+	ppu.sprites[1].index = snake.dir + 5;
+	ppu.sprites[1].attributes = 1;
 
-	// //some other misc sprites:
-	// for (uint32_t i = 1; i < 63; ++i) {
-	// 	float amt = (i + 2.0f * background_fade) / 62.0f;
-	// 	ppu.sprites[i].x = int8_t(0.5f * PPU466::ScreenWidth + std::cos( 2.0f * M_PI * amt * 5.0f + 0.01f * player_at.x) * 0.4f * PPU466::ScreenWidth);
-	// 	ppu.sprites[i].y = int8_t(0.5f * PPU466::ScreenHeight + std::sin( 2.0f * M_PI * amt * 3.0f + 0.01f * player_at.y) * 0.4f * PPU466::ScreenWidth);
-	// 	ppu.sprites[i].index = 32;
-	// 	ppu.sprites[i].attributes = 6;
-	// 	if (i % 2) ppu.sprites[i].attributes |= 0x80; //'behind' bit
-	// }
 
 	//--- actually draw ---
 	ppu.draw(drawable_size);

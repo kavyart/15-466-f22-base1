@@ -41,11 +41,9 @@ struct PlayMode : Mode {
 	struct Snake {
 		uint8_t x = PPU466::ScreenWidth / 2;
 		uint8_t y = PPU466::ScreenHeight / 2;
-		char dir = 'x';
+		uint8_t dir = 2; // 0=Left, 1=Right, 2=Up, 3=Down
 		uint8_t len = 1;
 		std::deque< std::pair<uint8_t,uint8_t> > body;
-		std::deque<uint8_t> body_x;
-		std::deque<uint8_t> body_y;
 	} snake;
 	bool food_eaten();
 	void snake_grow();
