@@ -204,8 +204,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 	if (isGameWon) {
 		int id = 0;
-		for (uint32_t j = 4; j < ppu.ScreenHeight; j+=32) {
-			for (uint32_t i = 12; i < ppu.ScreenWidth; i+=32) {
+		for (uint8_t j = 4; j < ppu.ScreenHeight; j+=32) {
+			for (uint8_t i = 12; i < ppu.ScreenWidth; i+=32) {
 				// butterfly sprite:
 				ppu.sprites[id].x = i;
 				ppu.sprites[id].y = j;
