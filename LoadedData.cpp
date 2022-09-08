@@ -17,12 +17,12 @@ LoadedData::TileData *LoadedData::load_sprite(std::string filename) {
     uint8_t num_colors = 0;
     bool color_found = false;
 
-    for (int i = 0; i < size.x; i++) {
-        for (int j = 0; j < size.y; j++) {
+    for (unsigned int i = 0; i < size.x; i++) {
+        for (unsigned int j = 0; j < size.y; j++) {
             color = data.at((j * size.y) + i);
 
             color_found = false;
-            for (int c = 0; c < num_colors; c++) {
+            for (uint8_t c = 0; c < num_colors; c++) {
                 if (tileData->palette.at(c) == color) {
                     color_found = true;
                     tileData->tile.bit1[j] = (tileData->tile.bit1[j] << 1) | ((c & 0b10) >> 1);

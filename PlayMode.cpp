@@ -118,7 +118,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::tick() {
-	constexpr float PlayerSpeed = 8.0f;
+	uint8_t PlayerSpeed = 8;
 	if (left.pressed) snake.x -= PlayerSpeed;
 	if (right.pressed) snake.x += PlayerSpeed;
 	if (down.pressed) snake.y -= PlayerSpeed;
