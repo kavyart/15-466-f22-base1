@@ -124,7 +124,7 @@ void PlayMode::tick() {
 	if (down.pressed) snake.y -= PlayerSpeed;
 	if (up.pressed) snake.y += PlayerSpeed;
 
-	snake.body.push_back(std::make_pair((snake.x / 8) * 8, (snake.y / 8) * 8));
+	snake.body.push_back(std::make_pair((snake.x / 8u) * 8u, (snake.y / 8u) * 8u));
 	if (snake.body.size() > snake.len) {
 		snake.body.pop_front();
 	}
