@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 
+#include <array>
 #include <vector>
 #include <deque>
 
@@ -19,8 +20,12 @@ struct PlayMode : Mode {
 	void tick();
 	static constexpr float Tick = 0.1f; //timestep used for tick()
 	float tick_acc = 0.0f; //accumulated time toward next tick
+	uint8_t tick_count = 0; //count ticks for longer events
 
 	//----- game state -----
+	bool isGameOver = false;
+	bool isGameWon = false;
+
 
 	//input tracking:
 	struct Button {
@@ -47,13 +52,10 @@ struct PlayMode : Mode {
 	} snake;
 	bool food_eaten();
 	void snake_grow();
+	void snake_shrink();
 
 
-	//some weird background animation:
-	float background_fade = 0.0f;
-
-	//player position:
-	glm::vec2 player_at = glm::vec2(0.0f);
+	std::array<uint32_t, 20> game_over_idxs = {20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400};
 
 	//----- drawing handled by PPU466 -----
 

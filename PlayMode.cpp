@@ -24,6 +24,10 @@ void PlayMode::snake_grow() {
 	snake.len++;
 }
 
+void PlayMode::snake_shrink() {
+	snake.len--;
+}
+
 LoadedData pipeline;
 Load<LoadedData::TileData> snake_left(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/snake_head_left.png");});
 Load<LoadedData::TileData> snake_right(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/snake_head_right.png");});
@@ -32,6 +36,8 @@ Load<LoadedData::TileData> snake_down(LoadTagDefault, []() -> LoadedData::TileDa
 Load<LoadedData::TileData> snake_body(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/snake_body.png");});
 Load<LoadedData::TileData> food_pixels(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/food.png");});
 Load<LoadedData::TileData> light_background(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/light_background.png");});
+Load<LoadedData::TileData> black(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/black.png");});
+Load<LoadedData::TileData> blue_butterfly(LoadTagDefault, []() -> LoadedData::TileData * {return pipeline.load_sprite("assets/blue_butterfly.png");});
 
 
 PlayMode::PlayMode() {
@@ -45,6 +51,10 @@ PlayMode::PlayMode() {
 	const LoadedData::TileData light_background_tile = *light_background;
 	ppu.tile_table[0].bit0 = light_background_tile.tile.bit0;
 	ppu.tile_table[0].bit1 = light_background_tile.tile.bit1;
+	//--black
+	const LoadedData::TileData black_tile = *black;
+	ppu.tile_table[1].bit0 = black_tile.tile.bit0;
+	ppu.tile_table[1].bit1 = black_tile.tile.bit1;
 
 	//---snake head
 	// left
@@ -74,14 +84,23 @@ PlayMode::PlayMode() {
 	ppu.tile_table[10].bit0 = food_tile.tile.bit0;
 	ppu.tile_table[10].bit1 = food_tile.tile.bit1;
 
+	//---butterfly
+	const LoadedData::TileData blue_butterfly_tile = *blue_butterfly;
+	ppu.tile_table[11].bit0 = blue_butterfly_tile.tile.bit0;
+	ppu.tile_table[11].bit1 = blue_butterfly_tile.tile.bit1;
+
 
 	// PALETTES
 	//---background
 	ppu.palette_table[0] = light_background_tile.palette;
+	//---black
+	ppu.palette_table[1] = black_tile.palette;
 	//---snake
-	ppu.palette_table[1] = snake_body_tile.palette;
+	ppu.palette_table[2] = snake_body_tile.palette;
 	//---food
-	ppu.palette_table[2] = food_tile.palette;
+	ppu.palette_table[3] = food_tile.palette;
+	//---butterfly
+	ppu.palette_table[4] = blue_butterfly_tile.palette;
 
 
 }
@@ -124,7 +143,10 @@ void PlayMode::tick() {
 	if (down.pressed) snake.y -= tile_size;
 	if (up.pressed) snake.y += tile_size;
 
-	snake.body.push_back(std::make_pair((snake.x / tile_size) * tile_size, (snake.y / tile_size) * tile_size));
+	uint8_t snake_x = (snake.x / tile_size) * tile_size;
+	uint8_t snake_y = (snake.y / tile_size) * tile_size;
+
+	snake.body.push_back(std::make_pair(snake_x, snake_y));
 	if (snake.body.size() > snake.len) {
 		snake.body.pop_front();
 	}
@@ -133,6 +155,22 @@ void PlayMode::tick() {
 		snake_grow();
 		gen_food();
 	}
+
+	if (tick_count >= 100) {
+		snake_shrink();
+		if (snake.len == 0) {
+			isGameOver = true;
+		}
+		if (snake.body.size() > snake.len) {
+			snake.body.pop_front();
+		}
+		tick_count = 0;
+	}
+
+	if (snake.len >= 25) {
+		isGameWon = true;
+	}
+
 }
 
 void PlayMode::update(float elapsed) {
@@ -142,6 +180,7 @@ void PlayMode::update(float elapsed) {
 	tick_acc += elapsed;
 	while (tick_acc > Tick) {
 		tick_acc -= Tick;
+		tick_count++;
 		tick();
 	}
 
@@ -151,15 +190,39 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	//--- set ppu state based on game state ---
 
 	// background
-	for (uint32_t i = 0; i < ppu.BackgroundWidth * ppu.BackgroundHeight; i++) {
-		ppu.background[i] = 0;
+	if (!isGameOver) {
+		for (uint32_t i = 0; i < ppu.BackgroundWidth * ppu.BackgroundHeight; i++) {
+			ppu.background[i] = 0;
+		}
+	} else {
+		for (uint32_t i = 0; i < ppu.BackgroundWidth * ppu.BackgroundHeight; i++) {
+			ppu.background[i] = 257;
+		}
+		ppu.draw(drawable_size);
+		return;
+	}
+
+	if (isGameWon) {
+		int id = 0;
+		for (uint32_t j = 4; j < ppu.ScreenHeight; j+=32) {
+			for (uint32_t i = 12; i < ppu.ScreenWidth; i+=32) {
+				// butterfly sprite:
+				ppu.sprites[id].x = i;
+				ppu.sprites[id].y = j;
+				ppu.sprites[id].index = 11;
+				ppu.sprites[id].attributes = 4;
+				id++;
+			}
+		}
+		ppu.draw(drawable_size);
+		return;
 	}
 	
 	// food sprite:
 	ppu.sprites[0].x = food.x;
 	ppu.sprites[0].y = food.y;
 	ppu.sprites[0].index = 10;
-	ppu.sprites[0].attributes = 2;
+	ppu.sprites[0].attributes = 3;
 
 	int idx = 2;
 	for (std::deque< std::pair<uint8_t,uint8_t> >::iterator it = snake.body.begin(); it != snake.body.end() - 1; it++) {
@@ -167,7 +230,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		ppu.sprites[idx].x = it->first;
 		ppu.sprites[idx].y = it->second;
 		ppu.sprites[idx].index = 9;
-		ppu.sprites[idx].attributes = 1;
+		ppu.sprites[idx].attributes = 2;
 		idx++;
 	}
 
@@ -175,7 +238,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	ppu.sprites[1].x = snake.body.back().first;
 	ppu.sprites[1].y = snake.body.back().second;
 	ppu.sprites[1].index = snake.dir + 5;
-	ppu.sprites[1].attributes = 1;
+	ppu.sprites[1].attributes = 2;
 
 
 	//--- actually draw ---

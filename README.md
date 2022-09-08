@@ -14,7 +14,7 @@ My [asset pipeline](LoadedData.cpp) begins with my [source files](assets/), whic
 
 How To Play:
 
-Press the left, right, up, and down arrow keys to change the caterpillar's direction. Eat as many flowers as quickly as you can so your caterpillar can stay healthy and happy and become a beautiful butterfly :)
+Press the left, right, up, and down arrow keys to change the caterpillar's direction. Eat as many flowers as quickly as you can so your caterpillar can stay healthy and happy and when it reaches the needed length (25), it will become a beautiful butterfly :)
 
 This game was built with [NEST](NEST.md).
 
