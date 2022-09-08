@@ -118,13 +118,13 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::tick() {
-	uint8_t PlayerSpeed = 8;
-	if (left.pressed) snake.x -= PlayerSpeed;
-	if (right.pressed) snake.x += PlayerSpeed;
-	if (down.pressed) snake.y -= PlayerSpeed;
-	if (up.pressed) snake.y += PlayerSpeed;
+	uint8_t tile_size = 8;
+	if (left.pressed) snake.x -= tile_size;
+	if (right.pressed) snake.x += tile_size;
+	if (down.pressed) snake.y -= tile_size;
+	if (up.pressed) snake.y += tile_size;
 
-	snake.body.push_back(std::make_pair((snake.x / 8u) * 8u, (snake.y / 8u) * 8u));
+	snake.body.push_back(std::make_pair((snake.x / tile_size) * tile_size, (snake.y / tile_size) * tile_size));
 	if (snake.body.size() > snake.len) {
 		snake.body.pop_front();
 	}
